@@ -20,7 +20,7 @@ import json
 import math
 import argparse
 
-def get_model(model, seqlen, maxseqlen):
+def get_model(model, seqlen, maxseqlen, quantize):
     import torch
     def skip(*args, **kwargs):
         pass
@@ -38,111 +38,174 @@ def get_model(model, seqlen, maxseqlen):
         config.rope_scaling = {"type": "linear", "factor": scaling_factor}
 
     from transformers import AutoModelForCausalLM
-    model = AutoModelForCausalLM.from_pretrained(model, config=config, trust_remote_code=True, use_flash_attention_2=True, torch_dtype=torch.half)
+    if quantize:
+        model = AutoModelForCausalLM.from_pretrained(model, config=config, trust_remote_code=True, use_flash_attention_2=True, torch_dtype=torch.half)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model, config=config, trust_remote_code=True, use_flash_attention_2=True, torch_dtype=torch.half, device_map="auto")
 
     model.seqlen = seqlen  #TODO
     if config.vocab_size == 32001:
         model.resize_token_embeddings(32001)
     return model
 
+# @torch.no_grad()
+# def llama_eval(model, testenc, dev):
+#     print('Evaluating ...')
+#     model_type = parse_model(model)
+
+#     testenc = testenc.input_ids
+#     nsamples = testenc.numel() // model.seqlen
+
+#     use_cache = model.config.use_cache
+#     model.config.use_cache = False
+#     layers = model.model.layers
+#     embeddings = get_embedding(model, model_type)
+#     model.model.rotary_emb = model.model.rotary_emb.to(dev)
+#     for i in range(len(embeddings)):
+#         embeddings[i] = embeddings[i].to(dev)
+#     layers[0] = layers[0].to(dev)
+
+#     dtype = next(iter(model.parameters())).dtype
+#     inps = torch.zeros(
+#         (nsamples, model.seqlen, model.config.hidden_size), dtype=dtype, device=dev
+#     )
+#     cache = {'i': 0, 'attention_mask': None}
+
+#     class Catcher(nn.Module):
+#         def __init__(self, module):
+#             super().__init__()
+#             self.module = module
+#         def forward(self, inp, **kwargs):
+#             inps[cache['i']] = inp
+#             cache['i'] += 1
+#             cache['attention_mask'] = kwargs['attention_mask']
+#             if 'position_ids' in kwargs:
+#                 cache['position_ids'] = kwargs['position_ids']
+#             raise ValueError
+
+#     layers[0] = Catcher(layers[0])
+#     for i in range(nsamples):
+#         batch = testenc[:, (i * model.seqlen):((i + 1) * model.seqlen)].to(dev)
+#         try:
+#             model(batch)
+#         except ValueError:
+#             pass
+#     layers[0] = layers[0].module
+
+#     layers[0] = layers[0].cpu()
+#     for i in range(len(embeddings)):
+#         embeddings[i] = embeddings[i].cpu()
+#     torch.cuda.empty_cache()
+
+#     outs = torch.zeros_like(inps)
+#     attention_mask = cache['attention_mask']
+#     position_ids = cache['position_ids']
+
+#     for i in range(len(layers)):
+#         print("Layer", i)
+#         layer = layers[i].to(dev)
+
+#         for j in range(nsamples):
+#             if model_type == 'opt':
+#                 outs[j] = layer(
+#                     inps[j].unsqueeze(0),
+#                     attention_mask=attention_mask,
+#                 )[0]
+#             else:
+#                 assert model_type == 'llama'
+#                 outs[j] = layer(
+#                     inps[j].unsqueeze(0),
+#                     attention_mask=attention_mask,
+#                     position_ids=position_ids,
+#                 )[0]
+
+#         layers[i] = layer.cpu()
+#         del layer
+#         torch.cuda.empty_cache()
+#         inps, outs = outs, inps
+
+#     norm = get_norm(model, model_type)
+#     if norm is not None:
+#         norm = norm.to(dev)
+#     model.lm_head = model.lm_head.to(dev)
+
+#     testenc = testenc.to(dev)
+#     nlls = []
+#     for i in range(nsamples):
+#         hidden_states = inps[i].unsqueeze(0)
+#         if norm is not None:
+#             hidden_states = model.model.norm(hidden_states)
+#         lm_logits = model.lm_head(hidden_states)
+#         shift_logits = lm_logits[:, :-1, :].contiguous()
+#         shift_labels = testenc[
+#             :, (i * model.seqlen):((i + 1) * model.seqlen)
+#         ][:, 1:]
+#         loss_fct = nn.CrossEntropyLoss()
+#         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+#         neg_log_likelihood = loss.float() * model.seqlen
+#         nlls.append(neg_log_likelihood)
+#     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
+#     print(ppl.item())
+#     model.config.use_cache = use_cache
+#     return ppl.item()
+
 @torch.no_grad()
 def llama_eval(model, testenc, dev):
     print('Evaluating ...')
-    model_type = parse_model(model)
+    # model_type = parse_model(model)
 
     testenc = testenc.input_ids
     nsamples = testenc.numel() // model.seqlen
 
+    # Save original config settings
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    layers = model.model.layers
-    embeddings = get_embedding(model, model_type)
-    for i in range(len(embeddings)):
-        embeddings[i] = embeddings[i].to(dev)
-    layers[0] = layers[0].to(dev)
 
-    dtype = next(iter(model.parameters())).dtype
-    inps = torch.zeros(
-        (nsamples, model.seqlen, model.config.hidden_size), dtype=dtype, device=dev
-    )
-    cache = {'i': 0, 'attention_mask': None}
+    batch_size = 8
+    n_batches = math.ceil(nsamples / batch_size)
 
-    class Catcher(nn.Module):
-        def __init__(self, module):
-            super().__init__()
-            self.module = module
-        def forward(self, inp, **kwargs):
-            inps[cache['i']] = inp
-            cache['i'] += 1
-            cache['attention_mask'] = kwargs['attention_mask']
-            if 'position_ids' in kwargs:
-                cache['position_ids'] = kwargs['position_ids']
-            raise ValueError
-
-    layers[0] = Catcher(layers[0])
-    for i in range(nsamples):
-        batch = testenc[:, (i * model.seqlen):((i + 1) * model.seqlen)].to(dev)
-        try:
-            model(batch)
-        except ValueError:
-            pass
-    layers[0] = layers[0].module
-
-    layers[0] = layers[0].cpu()
-    for i in range(len(embeddings)):
-        embeddings[i] = embeddings[i].cpu()
-    torch.cuda.empty_cache()
-
-    outs = torch.zeros_like(inps)
-    attention_mask = cache['attention_mask']
-    position_ids = cache['position_ids']
-
-    for i in range(len(layers)):
-        print("Layer", i)
-        layer = layers[i].to(dev)
-
-        for j in range(nsamples):
-            if model_type == 'opt':
-                outs[j] = layer(
-                    inps[j].unsqueeze(0),
-                    attention_mask=attention_mask,
-                )[0]
-            else:
-                assert model_type == 'llama'
-                outs[j] = layer(
-                    inps[j].unsqueeze(0),
-                    attention_mask=attention_mask,
-                    position_ids=position_ids,
-                )[0]
-
-        layers[i] = layer.cpu()
-        del layer
-        torch.cuda.empty_cache()
-        inps, outs = outs, inps
-
-    norm = get_norm(model, model_type)
-    if norm is not None:
-        norm = norm.to(dev)
-    model.lm_head = model.lm_head.to(dev)
-
-    testenc = testenc.to(dev)
     nlls = []
-    for i in range(nsamples):
-        hidden_states = inps[i].unsqueeze(0)
-        if norm is not None:
-            hidden_states = model.model.norm(hidden_states)
-        lm_logits = model.lm_head(hidden_states)
-        shift_logits = lm_logits[:, :-1, :].contiguous()
-        shift_labels = testenc[
-            :, (i * model.seqlen):((i + 1) * model.seqlen)
-        ][:, 1:]
-        loss_fct = nn.CrossEntropyLoss()
-        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-        neg_log_likelihood = loss.float() * model.seqlen
-        nlls.append(neg_log_likelihood)
+
+    device = next(model.parameters()).device
+
+    # Process in batches
+    for batch_idx in range(n_batches):
+        print("Batch", batch_idx, "of", n_batches, flush=True)
+        start_idx = batch_idx * batch_size
+        end_idx = min((batch_idx + 1) * batch_size, nsamples)
+        current_batch_size = end_idx - start_idx
+
+        # Prepare batch input
+        batch_input_ids = torch.stack([
+            testenc[:, (i * model.seqlen):((i + 1) * model.seqlen)]
+            for i in range(start_idx, end_idx)
+        ]).squeeze(1).to(device)
+
+        # Forward pass through the entire model at once
+        outputs = model(
+            input_ids=batch_input_ids,
+            use_cache=False,
+            return_dict=True
+        )
+
+        # Calculate loss for each item in batch
+        for j in range(current_batch_size):
+            logits = outputs.logits[j]
+            shift_logits = logits[:-1, :].contiguous()
+            shift_labels = batch_input_ids[j, 1:].contiguous()
+
+            loss_fct = nn.CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            neg_log_likelihood = loss.float() * model.seqlen
+            nlls.append(neg_log_likelihood)
+
+    # Calculate perplexity
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
     print(ppl.item())
+
+    # Restore original config
     model.config.use_cache = use_cache
+
     return ppl.item()
 
 @torch.no_grad()
@@ -155,6 +218,10 @@ def llama_calibration(model, dataloader, dev, perchannel_match, pertensor_match,
 
     model.model.embed_tokens = model.model.embed_tokens.to(dev)
     model.model.norm = model.model.norm.to(dev)
+    # for mistral models, comment out below line and uncomment the layer for-loop lines for mistral
+    model.model.rotary_emb = model.model.rotary_emb.to(dev)
+    # for layer in layers:
+    #     layer.self_attn.rotary_emb = layer.self_attn.rotary_emb.to(dev)
     layers[0] = layers[0].to(dev)
 
     dtype = next(iter(model.parameters())).dtype
@@ -190,7 +257,7 @@ def llama_calibration(model, dataloader, dev, perchannel_match, pertensor_match,
     attention_mask = cache['attention_mask']
     position_ids = cache['position_ids']
 
-    print('Quantizing ...')
+    print('Quantizing ...', flush=True)
 
     quantizers = {}
     for i in range(len(layers)):
@@ -399,12 +466,13 @@ if __name__ == '__main__':
 
     #load model
     print('Loading model ...')
+
     if args.load:
-        model = get_model(args.model, args.seqlen, args.maxseqlen)
+        model = get_model(args.model, args.seqlen, args.maxseqlen, args.quantize)
         model.load_state_dict(torch.load(args.load))
         model.eval()
     else:
-        model = get_model(args.model, args.seqlen, args.maxseqlen)
+        model = get_model(args.model, args.seqlen, args.maxseqlen, args.quantize)
         model.eval()
 
     if args.seqlen != -1:

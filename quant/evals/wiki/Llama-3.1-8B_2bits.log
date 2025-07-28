@@ -1,0 +1,32 @@
+The model was loaded with use_flash_attention_2=True, which is deprecated and may be removed in a future release. Please use `attn_implementation="flash_attention_2"` instead.
+Loading model ...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:24<01:14, 24.68s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:50<00:51, 25.56s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [01:31<00:32, 32.37s/it]Loading checkpoint shards: 100%|██████████| 4/4 [01:39<00:00, 22.72s/it]Loading checkpoint shards: 100%|██████████| 4/4 [01:39<00:00, 24.81s/it]
+Token indices sequence length is longer than the specified maximum sequence length for this model (2436214 > 131072). Running this sequence through the model will result in indexing errors
+/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/transformers/modeling_utils.py:4779: FutureWarning: `_is_quantized_training_enabled` is going to be deprecated in transformers 4.39.0. Please use `model.hf_quantizer.is_trainable` instead
+  warnings.warn(
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:612: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_upper = torch.tensor(quantizer[0]).cuda().flatten().half()
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:613: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_lower = torch.tensor(quantizer[1]).cuda().flatten().half()
+Done.
+Evaluating ...
+Batch 0 of 18
+Starting from v4.46, the `logits` model output will have the same type as the model (except at train time, where it will always be FP32)
+Batch 1 of 18
+Batch 2 of 18
+Batch 3 of 18
+Batch 4 of 18
+Batch 5 of 18
+Batch 6 of 18
+Batch 7 of 18
+Batch 8 of 18
+Batch 9 of 18
+Batch 10 of 18
+Batch 11 of 18
+Batch 12 of 18
+Batch 13 of 18
+Batch 14 of 18
+Batch 15 of 18
+Batch 16 of 18
+Batch 17 of 18
+7.448291301727295

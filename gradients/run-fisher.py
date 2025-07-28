@@ -205,6 +205,11 @@ def get_modules_kv(layer):
         layer.self_attn.v_proj,
     ]
 
+def save_act(module, inp, out):
+    module.act = out               # stash activation
+    out.retain_grad()              # keep its gradient
+
+
 # @profile
 def train():
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
@@ -238,7 +243,8 @@ def train():
         model_args.model_name_or_path,
         config=config,
         cache_dir=training_args.cache_dir,
-        trust_remote_code=True
+        trust_remote_code=True,
+        device_map="auto",
     )
 
 #    model.seqlen = seqlen  #TODO
@@ -246,10 +252,6 @@ def train():
         model.resize_token_embeddings(32001)
 
     model = model.bfloat16()
-    try:
-        model.lm_head.cuda()
-    except:
-        pass
 
     if model_args.load != "":
         model.load_state_dict(torch.load(model_args.load), strict=False)
@@ -259,24 +261,28 @@ def train():
     # For other models, replace this with proper variable names for model and layers
     _model = model.model
     _layers = _model.layers
-    _model.set_devices()
+
+    for layer in _layers:
+        for proj in get_modules_kv(layer): 
+            proj.register_forward_hook(save_act)
+
     grads = {}
 
     # main loop
     for i, data in tqdm(enumerate(dataloader[:data_args.num_examples])):
         data = data[0]
-        x = data.cuda()
+        x = data.to(next(model.parameters()).device)
 
         # act gradients
         for n, layer in enumerate(_layers):
             k_proj, v_proj = get_modules_kv(layer)
-            k_proj.retain_grad = True
-            v_proj.retain_grad = True
 
         # compute gradients
         outputs = model(input_ids=x, labels=x)
         loss = outputs.loss
         loss.backward()
+        del x, outputs, loss
+        # torch.cuda.empty_cache()
 
         # get grads
         for i, layer in enumerate(_layers):

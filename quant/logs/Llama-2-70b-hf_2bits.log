@@ -1,0 +1,88 @@
+The model was loaded with use_flash_attention_2=True, which is deprecated and may be removed in a future release. Please use `attn_implementation="flash_attention_2"` instead.
+You are attempting to use Flash Attention 2.0 with a model not initialized on GPU. Make sure to move the model to GPU after initializing it on CPU with `model.to('cuda')`.
+Loading model ...
+Loading checkpoint shards:   0%|          | 0/15 [00:00<?, ?it/s]Loading checkpoint shards:   7%|▋         | 1/15 [00:01<00:22,  1.61s/it]Loading checkpoint shards:  13%|█▎        | 2/15 [00:01<00:09,  1.37it/s]Loading checkpoint shards:  20%|██        | 3/15 [00:01<00:05,  2.22it/s]Loading checkpoint shards:  27%|██▋       | 4/15 [00:01<00:03,  3.13it/s]Loading checkpoint shards:  33%|███▎      | 5/15 [00:02<00:02,  3.79it/s]Loading checkpoint shards:  40%|████      | 6/15 [00:02<00:02,  4.28it/s]Loading checkpoint shards:  47%|████▋     | 7/15 [00:02<00:01,  4.47it/s]Loading checkpoint shards:  53%|█████▎    | 8/15 [00:02<00:01,  4.83it/s]Loading checkpoint shards:  60%|██████    | 9/15 [00:02<00:01,  5.57it/s]Loading checkpoint shards:  67%|██████▋   | 10/15 [00:02<00:00,  6.18it/s]Loading checkpoint shards:  73%|███████▎  | 11/15 [00:03<00:00,  6.51it/s]Loading checkpoint shards:  80%|████████  | 12/15 [00:03<00:00,  6.96it/s]Loading checkpoint shards:  87%|████████▋ | 13/15 [00:03<00:00,  6.73it/s]Loading checkpoint shards:  93%|█████████▎| 14/15 [00:03<00:00,  6.50it/s]Loading checkpoint shards: 100%|██████████| 15/15 [00:03<00:00,  6.35it/s]Loading checkpoint shards: 100%|██████████| 15/15 [00:03<00:00,  4.09it/s]
+Done.
+Starting ...
+Quantizing ...
+The attention layers in this model are transitioning from computing the RoPE embeddings internally through `position_ids` (2D tensor with the indexes of the tokens), to using externally computed `position_embeddings` (Tuple of tensors, containing cos and sin). In v4.46 `position_ids` will be removed and `position_embeddings` will be mandatory.
+Layer 0
+Layer 1
+Layer 2
+Layer 3
+Layer 4
+Layer 5
+Layer 6
+Layer 7
+Layer 8
+Layer 9
+Layer 10
+Layer 11
+Layer 12
+Layer 13
+Layer 14
+Layer 15
+Layer 16
+Layer 17
+Layer 18
+Layer 19
+Layer 20
+Layer 21
+Layer 22
+Layer 23
+Layer 24
+Layer 25
+Layer 26
+Layer 27
+Layer 28
+Layer 29
+Layer 30
+Layer 31
+Layer 32
+Layer 33
+Layer 34
+Layer 35
+Layer 36
+Layer 37
+Layer 38
+Layer 39
+Layer 40
+Layer 41
+Layer 42
+Layer 43
+Layer 44
+Layer 45
+Layer 46
+Layer 47
+Layer 48
+Layer 49
+Layer 50
+Layer 51
+Layer 52
+Layer 53
+Layer 54
+Layer 55
+Layer 56
+Layer 57
+Layer 58
+Layer 59
+Layer 60
+Layer 61
+Layer 62
+Layer 63
+Layer 64
+Layer 65
+Layer 66
+Layer 67
+Layer 68
+Layer 69
+Layer 70
+Layer 71
+Layer 72
+Layer 73
+Layer 74
+Layer 75
+Layer 76
+Layer 77
+Layer 78
+Layer 79

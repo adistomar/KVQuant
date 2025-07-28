@@ -1,0 +1,33 @@
+The model was loaded with use_flash_attention_2=True, which is deprecated and may be removed in a future release. Please use `attn_implementation="flash_attention_2"` instead.
+Loading model ...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:02<00:08,  2.87s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:05<00:05,  2.96s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:08<00:03,  3.01s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.08s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:09<00:00,  2.40s/it]
+Token indices sequence length is longer than the specified maximum sequence length for this model (2436214 > 131072). Running this sequence through the model will result in indexing errors
+/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/transformers/modeling_utils.py:4779: FutureWarning: `_is_quantized_training_enabled` is going to be deprecated in transformers 4.39.0. Please use `model.hf_quantizer.is_trainable` instead
+  warnings.warn(
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:612: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_upper = torch.tensor(quantizer[0]).cuda().flatten().half()
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:613: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_lower = torch.tensor(quantizer[1]).cuda().flatten().half()
+Done.
+Evaluating ...
+Batch 0 of 5
+Starting from v4.46, the `logits` model output will have the same type as the model (except at train time, where it will always be FP32)
+Traceback (most recent call last):
+  File "/rscratch/adityatomar/KVQuant/quant/llama_simquant.py", line 592, in <module>
+    llama_eval(model, testloader, DEV)
+  File "/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/rscratch/adityatomar/KVQuant/quant/llama_simquant.py", line 180, in llama_eval
+    outputs = model(
+              ^^^^^^
+  File "/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/transformers/models/llama/modeling_llama.py", line 1214, in forward
+    logits = self.lm_head(hidden_states[:, -num_logits_to_keep:, :]).float()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 31.31 GiB. GPU 0 has a total capacity of 47.43 GiB of which 16.47 GiB is free. Including non-PyTorch memory, this process has 30.95 GiB memory in use. Of the allocated memory 30.63 GiB is allocated by PyTorch, and 12.73 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)

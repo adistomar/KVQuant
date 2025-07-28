@@ -1,0 +1,34 @@
+The model was loaded with use_flash_attention_2=True, which is deprecated and may be removed in a future release. Please use `attn_implementation="flash_attention_2"` instead.
+Loading model ...
+Loading checkpoint shards:   0%|          | 0/15 [00:00<?, ?it/s]Loading checkpoint shards:   7%|▋         | 1/15 [00:03<00:44,  3.21s/it]Loading checkpoint shards:  13%|█▎        | 2/15 [00:06<00:40,  3.14s/it]Loading checkpoint shards:  20%|██        | 3/15 [00:09<00:36,  3.08s/it]Loading checkpoint shards:  27%|██▋       | 4/15 [00:12<00:33,  3.05s/it]Loading checkpoint shards:  33%|███▎      | 5/15 [00:15<00:30,  3.02s/it]Loading checkpoint shards:  40%|████      | 6/15 [00:18<00:26,  3.00s/it]Loading checkpoint shards:  47%|████▋     | 7/15 [00:21<00:24,  3.08s/it]Loading checkpoint shards:  53%|█████▎    | 8/15 [00:24<00:21,  3.12s/it]Loading checkpoint shards:  60%|██████    | 9/15 [00:27<00:18,  3.14s/it]Loading checkpoint shards:  67%|██████▋   | 10/15 [00:31<00:15,  3.20s/it]Loading checkpoint shards:  73%|███████▎  | 11/15 [00:34<00:13,  3.29s/it]Loading checkpoint shards:  80%|████████  | 12/15 [00:38<00:09,  3.31s/it]Loading checkpoint shards:  87%|████████▋ | 13/15 [00:41<00:06,  3.35s/it]Loading checkpoint shards:  93%|█████████▎| 14/15 [00:44<00:03,  3.29s/it]Loading checkpoint shards: 100%|██████████| 15/15 [00:44<00:00,  2.38s/it]Loading checkpoint shards: 100%|██████████| 15/15 [00:44<00:00,  3.00s/it]
+/rscratch/adityatomar/anaconda3/envs/myenv/lib/python3.11/site-packages/transformers/modeling_utils.py:4779: FutureWarning: `_is_quantized_training_enabled` is going to be deprecated in transformers 4.39.0. Please use `model.hf_quantizer.is_trainable` instead
+  warnings.warn(
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:612: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_upper = torch.tensor(quantizer[0]).cuda().flatten().half()
+/rscratch/adityatomar/KVQuant/quant/kvquant/simquant_module_quantizer.py:613: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.outlier_threshold_lower = torch.tensor(quantizer[1]).cuda().flatten().half()
+Done.
+Evaluating ...
+Batch 0 of 21
+Starting from v4.46, the `logits` model output will have the same type as the model (except at train time, where it will always be FP32)
+Batch 1 of 21
+Batch 2 of 21
+Batch 3 of 21
+Batch 4 of 21
+Batch 5 of 21
+Batch 6 of 21
+Batch 7 of 21
+Batch 8 of 21
+Batch 9 of 21
+Batch 10 of 21
+Batch 11 of 21
+Batch 12 of 21
+Batch 13 of 21
+Batch 14 of 21
+Batch 15 of 21
+Batch 16 of 21
+Batch 17 of 21
+Batch 18 of 21
+Batch 19 of 21
+Batch 20 of 21
+3.359435558319092
